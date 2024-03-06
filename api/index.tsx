@@ -2,6 +2,7 @@ import { Button, Frog, TextInput } from "frog";
 import { handle } from "frog/vercel";
 import { storageRegistry } from "../lib/contracts.js";
 import neynar from "../lib/neynar.js";
+import { User } from "@neynar/nodejs-sdk/build/neynar-api/v1/openapi/models/user.js";
 
 // Uncomment to use Edge Runtime.
 // export const config = {
@@ -9,27 +10,22 @@ import neynar from "../lib/neynar.js";
 // }
 
 type State = {
-  fid: number;
-  username: string;
-  displayName: string;
-  pfp: string;
+  user: User | null;
 };
 
 export const app = new Frog<State>({
   basePath: "/api/frame",
   initialState: {
-    fid: 0,
-    username: "",
-    displayName: "",
-    pfp: "",
+    user: null,
   },
 });
 
 app.transaction("/rent", async (c) => {
   const { previousState } = c;
 
-  // Get fid from state
-  const { fid } = (previousState as State);
+  // Get user from state
+  const { user } = previousState as State;
+  const fid = user?.fid ?? 0;
 
   // Get current storage price
   const units = 1n;
@@ -85,7 +81,7 @@ app.frame("/", async (c) => {
               <div>
                 Enter a username below to give 1 storage unit to a friend.
               </div>
-              <div>You'll need about $3 of ETH on Optimism.</div>
+              <div>You'll need about $5 of ETH on Optimism.</div>
             </div>
           </div>
         </div>
@@ -104,50 +100,39 @@ app.frame("/find", async (c) => {
   const { buttonValue, inputText, deriveState } = c;
 
   let found = false;
-  let fid = 0;
-  let username: string;
-  let displayName: string;
-  let pfp: string;
+  let user: User;
   if (buttonValue === "find") {
-    username = (inputText ?? "").replace(/^@/, "");
+    const username = (inputText ?? "").replace(/^@/, "");
     try {
       const { result } = await neynar.lookupUserByUsername(username, 3);
-      fid = result.user.fid;
-      displayName = result.user.displayName;
-      pfp = result.user.pfp.url;
+      user = result.user;
       found = true;
     } catch (error) {}
   }
 
   const state = deriveState((previousState) => {
-    if (fid) {
-      previousState.fid = fid;
-    }
-    if (username) {
-      previousState.username = username;
-    }
-    if (displayName) {
-      previousState.displayName = displayName;
-    }
-    if (pfp) {
-      previousState.pfp = pfp;
+    if (user) {
+      previousState.user = user;
     }
   });
 
-  const intents =
-    fid > 0
-      ? [
-          <Button.Reset>⬅️ Back</Button.Reset>,
-          <Button.Transaction target="/rent">
-            🎁 Give Storage
-          </Button.Transaction>,
-        ]
-      : [
-          <TextInput placeholder="Enter a username" />,
-          <Button value="find" action="/find">
-            🔍 Try again
-          </Button>,
-        ];
+  const intents = state.user
+    ? [
+        <Button.Reset>⬅️ Back</Button.Reset>,
+        <Button.Transaction target="/rent">🎁 Give</Button.Transaction>,
+      ]
+    : [
+        <TextInput placeholder="Enter a username" />,
+        <Button value="find" action="/find">
+          🔍 Try again
+        </Button>,
+      ];
+
+  const pfp = state.user?.pfp.url
+    ? `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_jpg,w_144/${encodeURIComponent(
+        state.user.pfp.url
+      )}`
+    : "/default-avatar.png";
 
   return c.res({
     image: (
@@ -197,15 +182,17 @@ app.frame("/find", async (c) => {
                 }}
               >
                 <img
-                  src={state.pfp}
+                  src={pfp}
                   style={{ width: 200, height: 200, borderRadius: 100 }}
                 />
-                <div>{state.displayName}</div>
+                <div>{state.user?.displayName}</div>
               </div>
-              <p>Give storage to @{state.username}?</p>
+              <p style={{ marginTop: 0 }}>
+                Give storage to @{state.user?.username}?
+              </p>
             </div>
           ) : (
-            <p>Username not found.</p>
+            <p>👀 User not found.</p>
           )}
         </div>
       </div>
