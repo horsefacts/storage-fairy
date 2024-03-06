@@ -163,7 +163,7 @@ app.frame("/find", async (c) => {
   const getImage = async (state: State) => {
     if (state.txHash) {
       if (state.indexed) {
-        return `https://og.onceupon.gg/card/${state.txHash}?datetime=${Date.now()}`;
+        return `https://og.onceupon.gg/card/${state.txHash}`;
       } else {
         return (
           <div
