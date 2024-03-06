@@ -122,6 +122,8 @@ app.frame("/find", async (c) => {
     }
   });
 
+  console.log(state);
+
   const getIntents = (state: State) => {
     if (state.txHash) {
       return [
@@ -149,9 +151,7 @@ app.frame("/find", async (c) => {
 
   const getImage = (state: State) => {
     if (state.txHash) {
-      return `https://og.onceupon.gg/card/${
-        state.txHash
-      }?datetime=${Date.now()}`;
+      return `https://og.onceupon.gg/card/${state.txHash}?datetime=${Date.now()}`;
     }
 
     const pfp = state.user?.pfp.url
