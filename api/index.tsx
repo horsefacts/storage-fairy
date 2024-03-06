@@ -3,12 +3,6 @@ import { handle } from "frog/vercel";
 import { storageRegistry } from "../lib/contracts.js";
 import neynar from "../lib/neynar.js";
 import { User } from "@neynar/nodejs-sdk/build/neynar-api/v1/openapi/models/user.js";
-import { Hex } from "viem";
-
-// Uncomment to use Edge Runtime.
-// export const config = {
-//   runtime: 'edge',
-// }
 
 type State = {
   user: User | null;
@@ -46,77 +40,9 @@ app.transaction("/rent", async (c) => {
 });
 
 app.frame("/", async (c) => {
-  return c.res({
-    image: (
-      <div
-        style={{
-          alignItems: "center",
-          background: "black",
-          backgroundSize: "100% 100%",
-          display: "flex",
-          flexDirection: "column",
-          flexWrap: "nowrap",
-          height: "100%",
-          justifyContent: "center",
-          textAlign: "center",
-          width: "100%",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            color: "white",
-            fontStyle: "normal",
-            letterSpacing: "-0.025em",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-            }}
-          >
-            <div style={{ fontSize: 80 }}>🎁 Give storage to a friend!</div>
-            <div
-              style={{ fontSize: 40, display: "flex", flexDirection: "column" }}
-            >
-              <div>
-                Enter a username below to give 1 storage unit to a friend.
-              </div>
-              <div>You'll need about $5 of ETH on Optimism.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    ),
-    intents: [
-      <TextInput placeholder="Enter a username" />,
-      <Button value="find" action="/find">
-        🔍 Find user
-      </Button>,
-    ],
-  });
-});
-
-app.frame("/find", async (c) => {
-  const { buttonValue, inputText, deriveState, transactionId } = c;
-
-  let found = false;
-  let user: User;
-  if (buttonValue === "find" && !transactionId) {
-    const username = (inputText ?? "").replace(/^@/, "");
-    try {
-      const { result } = await neynar.lookupUserByUsername(username, 3);
-      user = result.user;
-      found = true;
-    } catch (error) {}
-  }
+  const { transactionId, deriveState } = c;
 
   const state = deriveState((previousState) => {
-    if (user) {
-      previousState.user = user;
-    }
     if (transactionId) {
       previousState.txHash = transactionId;
     }
@@ -132,7 +58,100 @@ app.frame("/find", async (c) => {
           View Transaction
         </Button.Link>,
       ];
-    } else if (state.user) {
+    } else {
+      return [
+        <TextInput placeholder="Enter a username" />,
+        <Button value="find" action="/find">
+          🔍 Find user
+        </Button>,
+      ];
+    }
+  };
+
+  const getImage = (state: State) => {
+    if (state.txHash) {
+      return `https://og.onceupon.gg/card/${
+        state.txHash
+      }?datetime=${Date.now()}`;
+    } else {
+      return (
+        <div
+          style={{
+            alignItems: "center",
+            background: "black",
+            backgroundSize: "100% 100%",
+            display: "flex",
+            flexDirection: "column",
+            flexWrap: "nowrap",
+            height: "100%",
+            justifyContent: "center",
+            textAlign: "center",
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              color: "white",
+              fontStyle: "normal",
+              letterSpacing: "-0.025em",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              <div style={{ fontSize: 80 }}>🎁 Give storage to a friend!</div>
+              <div
+                style={{
+                  fontSize: 40,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <div>
+                  Enter a username below to give 1 storage unit to a friend.
+                </div>
+                <div>You'll need about $5 of ETH on Optimism.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  };
+
+  return c.res({
+    image: getImage(state),
+    intents: getIntents(state),
+  });
+});
+
+app.frame("/find", async (c) => {
+  const { buttonValue, inputText, deriveState } = c;
+
+  let found = false;
+  let user: User;
+  if (buttonValue === "find") {
+    const username = (inputText ?? "").replace(/^@/, "");
+    try {
+      const { result } = await neynar.lookupUserByUsername(username, 3);
+      user = result.user;
+      found = true;
+    } catch (error) {}
+  }
+
+  const state = deriveState((previousState) => {
+    if (user) {
+      previousState.user = user;
+    }
+  });
+
+  const getIntents = (state: State) => {
+    if (state.user) {
       return [
         <Button.Reset>⬅️ Back</Button.Reset>,
         <Button.Transaction target="/rent">🎁 Give</Button.Transaction>,
@@ -146,21 +165,14 @@ app.frame("/find", async (c) => {
       ];
     }
   };
+  const pfp = state.user?.pfp.url
+    ? `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_jpg,w_144/${encodeURIComponent(
+        state.user.pfp.url
+      )}`
+    : "/default-avatar.png";
 
-  const getImage = (state: State) => {
-    if (state.txHash) {
-      return `https://og.onceupon.gg/card/${
-        state.txHash
-      }?datetime=${Date.now()}`;
-    }
-
-    const pfp = state.user?.pfp.url
-      ? `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_jpg,w_144/${encodeURIComponent(
-          state.user.pfp.url
-        )}`
-      : "/default-avatar.png";
-
-    return (
+  return c.res({
+    image: (
       <div
         style={{
           alignItems: "center",
@@ -221,11 +233,7 @@ app.frame("/find", async (c) => {
           )}
         </div>
       </div>
-    );
-  };
-
-  return c.res({
-    image: getImage(state),
+    ),
     intents: getIntents(state),
   });
 });
