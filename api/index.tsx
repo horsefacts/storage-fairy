@@ -127,9 +127,7 @@ app.frame("/find", async (c) => {
   const getIntents = (state: State) => {
     if (state.txHash) {
       return [
-        <Button value="refresh">
-          🔄 Refresh
-        </Button>,
+        <Button value="refresh">🔄 Refresh</Button>,
         <Button.Link href={`https://www.onceupon.gg/${state.txHash}`}>
           View Transaction
         </Button.Link>,
@@ -149,9 +147,66 @@ app.frame("/find", async (c) => {
     }
   };
 
-  const getImage = (state: State) => {
+  const getImage = async (state: State) => {
     if (state.txHash) {
-      return `https://og.onceupon.gg/card/${state.txHash}?datetime=${Date.now()}`;
+      const txData = await fetch(
+        `https://api.onceupon.gg/v1/transactions/${state.txHash}`
+      );
+      if (txData.status === 200) {
+        return `https://og.onceupon.gg/card/${
+          state.txHash
+        }?datetime=${Date.now()}`;
+      } else {
+        return (
+          <div
+            style={{
+              alignItems: "center",
+              background: "black",
+              backgroundSize: "100% 100%",
+              display: "flex",
+              flexDirection: "column",
+              flexWrap: "nowrap",
+              height: "100%",
+              justifyContent: "center",
+              textAlign: "center",
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                color: "white",
+                fontSize: 60,
+                fontStyle: "normal",
+                letterSpacing: "-0.025em",
+                lineHeight: 1.4,
+                marginTop: 30,
+                padding: "0 120px",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ fontSize: 60 }}>Broadcasting...</div>
+                <div
+                  style={{
+                    fontSize: 40,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <div>Click "Refresh" below to check on your transaction.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
     }
 
     const pfp = state.user?.pfp.url
@@ -225,7 +280,7 @@ app.frame("/find", async (c) => {
   };
 
   return c.res({
-    image: getImage(state),
+    image: await getImage(state),
     intents: getIntents(state),
   });
 });
