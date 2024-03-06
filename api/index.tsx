@@ -3,6 +3,7 @@ import { handle } from "frog/vercel";
 import { storageRegistry } from "../lib/contracts.js";
 import neynar from "../lib/neynar.js";
 import { User } from "@neynar/nodejs-sdk/build/neynar-api/v1/openapi/models/user.js";
+import { Hex } from "viem";
 
 // Uncomment to use Edge Runtime.
 // export const config = {
@@ -11,12 +12,14 @@ import { User } from "@neynar/nodejs-sdk/build/neynar-api/v1/openapi/models/user
 
 type State = {
   user: User | null;
+  txHash: string | null;
 };
 
 export const app = new Frog<State>({
   basePath: "/api/frame",
   initialState: {
     user: null,
+    txHash: null,
   },
 });
 
@@ -97,7 +100,7 @@ app.frame("/", async (c) => {
 });
 
 app.frame("/find", async (c) => {
-  const { buttonValue, inputText, deriveState } = c;
+  const { buttonValue, inputText, deriveState, transactionId } = c;
 
   let found = false;
   let user: User;
@@ -114,28 +117,50 @@ app.frame("/find", async (c) => {
     if (user) {
       previousState.user = user;
     }
+    if (transactionId) {
+      previousState.txHash = transactionId;
+    }
   });
 
-  const intents = state.user
-    ? [
+  const getIntents = (state: State) => {
+    if (state.txHash) {
+      return [
+        <Button value="refresh" action="/rent">
+          🔄 Refresh
+        </Button>,
+        <Button.Link href={`https://www.onceupon.gg/${state.txHash}`}>
+          View Transaction
+        </Button.Link>,
+      ];
+    } else if (state.user) {
+      return [
         <Button.Reset>⬅️ Back</Button.Reset>,
         <Button.Transaction target="/rent">🎁 Give</Button.Transaction>,
-      ]
-    : [
+      ];
+    } else {
+      return [
         <TextInput placeholder="Enter a username" />,
         <Button value="find" action="/find">
           🔍 Try again
         </Button>,
       ];
+    }
+  };
 
-  const pfp = state.user?.pfp.url
-    ? `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_jpg,w_144/${encodeURIComponent(
-        state.user.pfp.url
-      )}`
-    : "/default-avatar.png";
+  const getImage = (state: State) => {
+    if (state.txHash) {
+      return `https://og.onceupon.gg/card/${
+        state.txHash
+      }?datetime=${Date.now()}`;
+    }
 
-  return c.res({
-    image: (
+    const pfp = state.user?.pfp.url
+      ? `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_jpg,w_144/${encodeURIComponent(
+          state.user.pfp.url
+        )}`
+      : "/default-avatar.png";
+
+    return (
       <div
         style={{
           alignItems: "center",
@@ -196,8 +221,12 @@ app.frame("/find", async (c) => {
           )}
         </div>
       </div>
-    ),
-    intents,
+    );
+  };
+
+  return c.res({
+    image: getImage(state),
+    intents: getIntents(state),
   });
 });
 
