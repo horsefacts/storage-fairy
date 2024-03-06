@@ -127,7 +127,7 @@ app.frame("/find", async (c) => {
   const getIntents = (state: State) => {
     if (state.txHash) {
       return [
-        <Button value="refresh" action="/rent">
+        <Button value="refresh">
           🔄 Refresh
         </Button>,
         <Button.Link href={`https://www.onceupon.gg/${state.txHash}`}>
@@ -151,7 +151,7 @@ app.frame("/find", async (c) => {
 
   const getImage = (state: State) => {
     if (state.txHash) {
-      return <div><img src={`https://og.onceupon.gg/card/${state.txHash}?datetime=${Date.now()}`} /></div>;
+      return `https://og.onceupon.gg/card/${state.txHash}?datetime=${Date.now()}`;
     }
 
     const pfp = state.user?.pfp.url
