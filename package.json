@@ -1,0 +1,21 @@
+{
+  "name": "give-storage",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "frog vercel-build",
+    "dev": "frog dev",
+    "deploy": "vercel"
+  },
+  "dependencies": {
+    "@neynar/nodejs-sdk": "^1.11.0",
+    "frog": "latest",
+    "hono": "^4",
+    "viem": "^2.7.19"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "vercel": "^32.4.1"
+  }
+}
