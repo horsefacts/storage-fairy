@@ -3,12 +3,10 @@ import { handle } from "frog/vercel";
 import { storageRegistry } from "../lib/contracts.js";
 import neynar from "../lib/neynar.js";
 import { User } from "@neynar/nodejs-sdk/build/neynar-api/v1/openapi/models/user.js";
-import { Hex } from "viem";
 
-// Uncomment to use Edge Runtime.
-// export const config = {
-//   runtime: 'edge',
-// }
+export const config = {
+  runtime: 'edge',
+}
 
 type State = {
   user: User | null;
@@ -107,7 +105,7 @@ app.frame("/find", async (c) => {
   let found = false;
   let user: User;
   if (buttonValue === "find" && !transactionId) {
-    const username = (inputText ?? "").replace(/^@/, "");
+    const username = (inputText ?? "").trim().replace(/^@/, "");
     try {
       const { result } = await neynar.lookupUserByUsername(username, 3);
       user = result.user;
