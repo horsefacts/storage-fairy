@@ -16,7 +16,7 @@ type State = {
 };
 
 export const app = new Frog<State>({
-  basePath: "/frame",
+  basePath: "/api/frame",
   initialState: {
     fid: 0,
     username: "",
