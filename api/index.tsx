@@ -4,10 +4,6 @@ import { storageRegistry } from "../lib/contracts.js";
 import neynar from "../lib/neynar.js";
 import { User } from "@neynar/nodejs-sdk/build/neynar-api/v1/openapi/models/user.js";
 
-export const config = {
-  runtime: 'edge',
-}
-
 type State = {
   user: User | null;
   txHash: string | null;
