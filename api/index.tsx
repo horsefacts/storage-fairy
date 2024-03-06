@@ -10,7 +10,7 @@ type State = {
   indexed: boolean;
 };
 
-export const app = new Frog<State>({
+export const app = new Frog<{ State: State }>({
   basePath: "/api/frame",
   initialState: {
     user: null,
@@ -96,46 +96,31 @@ app.frame("/", async (c) => {
 });
 
 app.frame("/find", async (c) => {
-  const { buttonValue, inputText, previousState, deriveState, transactionId } = c;
+  const { buttonValue, inputText, deriveState, transactionId } = c;
 
-  let found = false;
-  let user: User;
-  if (buttonValue === "find" && !transactionId) {
-    const username = (inputText ?? "").trim().replace(/^@/, "");
-    try {
-      const { result } = await neynar.lookupUserByUsername(username, 3);
-      user = result.user;
-      found = true;
-    } catch (error) {}
-  }
-
-  let indexed = false;
-  if (previousState.txHash && !previousState.indexed) {
+  const state = await deriveState(async (previousState) => {
+    if (buttonValue === "find" && !transactionId) {
+      const username = (inputText ?? "").trim().replace(/^@/, "");
+      try {
+        const { result } = await neynar.lookupUserByUsername(username, 3);
+        previousState.user = result.user;
+      } catch (error) { }
+    }
+    if (transactionId && !previousState.indexed) {
       const txData = await fetch(
-        `https://api.onceupon.gg/v1/transactions/${previousState.txHash}`
+        `https://api.onceupon.gg/v1/transactions/${transactionId}`
       );
       if (txData.status === 200) {
-        indexed = true;
+        previousState.indexed = true;
       }
-  }
-
-  const state = deriveState((previousState) => {
-    if (user) {
-      previousState.user = user;
-    }
-    if (transactionId) {
-      previousState.txHash = transactionId;
-    }
-    if (indexed) {
-      previousState.indexed = true;
     }
   });
 
   const getIntents = (state: State) => {
-    if (state.txHash) {
+    if (transactionId) {
       return [
         <Button value="refresh">🔄 Refresh</Button>,
-        <Button.Link href={`https://www.onceupon.gg/${state.txHash}`}>
+        <Button.Link href={`https://www.onceupon.gg/${transactionId}`}>
           View Transaction
         </Button.Link>,
       ];
@@ -155,9 +140,9 @@ app.frame("/find", async (c) => {
   };
 
   const getImage = async (state: State) => {
-    if (state.txHash) {
+    if (transactionId) {
       if (state.indexed) {
-        return `https://og.onceupon.gg/card/${state.txHash}`;
+        return `https://og.onceupon.gg/card/${transactionId}`;
       } else {
         return (
           <div
@@ -213,8 +198,8 @@ app.frame("/find", async (c) => {
 
     const pfp = state.user?.pfp.url
       ? `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_jpg,w_144/${encodeURIComponent(
-          state.user.pfp.url
-        )}`
+        state.user.pfp.url
+      )}`
       : "/default-avatar.png";
 
     return (
@@ -245,7 +230,7 @@ app.frame("/find", async (c) => {
             whiteSpace: "pre-wrap",
           }}
         >
-          {found ? (
+          {state.user ? (
             <div
               style={{
                 display: "flex",
