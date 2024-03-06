@@ -151,7 +151,7 @@ app.frame("/find", async (c) => {
 
   const getImage = (state: State) => {
     if (state.txHash) {
-      return `https://og.onceupon.gg/card/${state.txHash}?datetime=${Date.now()}`;
+      return <div><img src={`https://og.onceupon.gg/card/${state.txHash}?datetime=${Date.now()}`} /></div>;
     }
 
     const pfp = state.user?.pfp.url
