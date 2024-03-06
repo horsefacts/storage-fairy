@@ -13,6 +13,7 @@ import { Hex } from "viem";
 type State = {
   user: User | null;
   txHash: string | null;
+  indexed: boolean;
 };
 
 export const app = new Frog<State>({
@@ -20,6 +21,7 @@ export const app = new Frog<State>({
   initialState: {
     user: null,
     txHash: null,
+    indexed: false
   },
 });
 
@@ -100,7 +102,7 @@ app.frame("/", async (c) => {
 });
 
 app.frame("/find", async (c) => {
-  const { buttonValue, inputText, deriveState, transactionId } = c;
+  const { buttonValue, inputText, previousState, deriveState, transactionId } = c;
 
   let found = false;
   let user: User;
@@ -113,6 +115,16 @@ app.frame("/find", async (c) => {
     } catch (error) {}
   }
 
+  let indexed = false;
+  if (previousState.txHash && !previousState.indexed) {
+      const txData = await fetch(
+        `https://api.onceupon.gg/v1/transactions/${previousState.txHash}`
+      );
+      if (txData.status === 200) {
+        indexed = true;
+      }
+  }
+
   const state = deriveState((previousState) => {
     if (user) {
       previousState.user = user;
@@ -120,9 +132,10 @@ app.frame("/find", async (c) => {
     if (transactionId) {
       previousState.txHash = transactionId;
     }
+    if (indexed) {
+      previousState.indexed = true;
+    }
   });
-
-  console.log(state);
 
   const getIntents = (state: State) => {
     if (state.txHash) {
@@ -149,13 +162,8 @@ app.frame("/find", async (c) => {
 
   const getImage = async (state: State) => {
     if (state.txHash) {
-      const txData = await fetch(
-        `https://api.onceupon.gg/v1/transactions/${state.txHash}`
-      );
-      if (txData.status === 200) {
-        return `https://og.onceupon.gg/card/${
-          state.txHash
-        }?datetime=${Date.now()}`;
+      if (state.indexed) {
+        return `https://og.onceupon.gg/card/${state.txHash}?datetime=${Date.now()}`;
       } else {
         return (
           <div
