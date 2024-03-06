@@ -104,7 +104,7 @@ app.frame("/find", async (c) => {
 
   let found = false;
   let user: User;
-  if (buttonValue === "find") {
+  if (buttonValue === "find" && !transactionId) {
     const username = (inputText ?? "").replace(/^@/, "");
     try {
       const { result } = await neynar.lookupUserByUsername(username, 3);
