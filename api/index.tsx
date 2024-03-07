@@ -102,11 +102,18 @@ app.frame("/", async (c) => {
 });
 
 app.frame("/find", async (c) => {
-  const { frameData, buttonValue, inputText, previousState, deriveState, transactionId } =
-    c;
+  const {
+    frameData,
+    buttonValue,
+    inputText,
+    previousState,
+    deriveState,
+    transactionId,
+  } = c;
 
   let found = false;
   let user: UserV1;
+  let giver: UserV2;
   if (buttonValue === "find" && !transactionId) {
     const username = (inputText ?? "").trim().replace(/^@/, "");
     try {
@@ -114,12 +121,10 @@ app.frame("/find", async (c) => {
       user = result.user;
       found = true;
     } catch (error) {}
-  }
-
-  let giver: UserV2;
-  if (!previousState.giver) {
     try {
-      const { users } = await neynar.fetchBulkUsers([frameData?.fid ?? 1], { viewerFid: 3 });
+      const { users } = await neynar.fetchBulkUsers([frameData?.fid ?? 1], {
+        viewerFid: 3,
+      });
       giver = users[0];
     } catch (error) {}
   }
@@ -132,9 +137,8 @@ app.frame("/find", async (c) => {
     if (txData.status === 200) {
       indexed = true;
       if (previousState.user && previousState.giver) {
-      const cast = `@${previousState.user?.username}, @${previousState.giver?.username}`
-      await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, cast);
-
+        const cast = `@${previousState.user?.username}, @${previousState.giver?.username} gave you 1 storage unit.\nhttps://www.onceupon.gg/${previousState.txHash}`;
+        await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID ?? "", cast);
       }
     }
   }
