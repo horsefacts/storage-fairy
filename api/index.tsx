@@ -110,6 +110,7 @@ app.frame("/find", async (c) => {
     deriveState,
     transactionId,
   } = c;
+  console.log(c);
 
   let found = false;
   let user: UserV1;
@@ -147,14 +148,14 @@ app.frame("/find", async (c) => {
     if (user) {
       previousState.user = user;
     }
+    if (giver) {
+      previousState.giver = giver;
+    }
     if (transactionId) {
       previousState.txHash = transactionId;
     }
     if (indexed) {
       previousState.indexed = true;
-    }
-    if (giver) {
-      previousState.giver = giver;
     }
   });
 
