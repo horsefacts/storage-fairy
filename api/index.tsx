@@ -110,8 +110,6 @@ app.frame("/find", async (c) => {
     deriveState,
     transactionId,
   } = c;
-  console.log(c);
-  console.log("txId", transactionId);
 
   let found = false;
   let user: UserV1;
@@ -140,7 +138,9 @@ app.frame("/find", async (c) => {
       indexed = true;
       if (previousState.user && previousState.giver) {
         const cast = `@${previousState.user?.username}, @${previousState.giver?.username} gave you 1 storage unit.`;
-        await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID ?? "", cast, { embeds: [{url: `https://www.onceupon.gg/${previousState.txHash}`}]});
+        await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID ?? "", cast, {
+          embeds: [{ url: `https://www.onceupon.gg/${previousState.txHash}` }],
+        });
       }
     }
   }
