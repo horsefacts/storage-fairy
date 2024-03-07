@@ -16,7 +16,7 @@ export const app = new Frog<State>({
   basePath: "/api/frame",
   secret: process.env.FROG_SECRET,
   browserLocation: "https://warpcast.notion.site/The-Storage-Fairy-53cfd5d20596482883c2a76f5ce97328",
-  dev: { enabled: false},
+  dev: { enabled: true},
   initialState: {
     user: null,
     giver: null,
@@ -49,51 +49,7 @@ app.transaction("/rent", async (c) => {
 
 app.frame("/", async (c) => {
   return c.res({
-    image: (
-      <div
-        style={{
-          alignItems: "center",
-          background: "white",
-          backgroundSize: "100% 100%",
-          display: "flex",
-          flexDirection: "column",
-          flexWrap: "nowrap",
-          height: "100%",
-          justifyContent: "center",
-          textAlign: "center",
-          width: "100%",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            color: "black",
-            fontStyle: "normal",
-            letterSpacing: "-0.025em",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-            }}
-          >
-            <div style={{ fontSize: 80, color: "rgb(67, 44, 141)" }}>
-              🧚 Storage Fairy!
-            </div>
-            <div
-              style={{ fontSize: 40, display: "flex", flexDirection: "column" }}
-            >
-              <div>Give the gift of casts to a friend.</div>
-              <div>
-                Pay $5 in OP ETH to let them store more casts on Farcaster.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    ),
+    image: 'https://storage-fairy.vercel.app/storage-fairy.png',
     intents: [
       <TextInput placeholder="Enter a username" />,
       <Button value="find" action="/find">
@@ -249,7 +205,7 @@ app.frame("/find", async (c) => {
       ? `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_jpg,w_144/${encodeURIComponent(
           state.user.pfp.url
         )}`
-      : "/default-avatar.png";
+      : "https://storage-fairy.vercel.app/default-avatar.png";
 
     return (
       <div
