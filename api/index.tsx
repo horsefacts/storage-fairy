@@ -14,6 +14,8 @@ type State = {
 
 export const app = new Frog<State>({
   basePath: "/api/frame",
+  secret: process.env.FROG_SECRET,
+  browserLocation: "https://warpcast.notion.site/The-Storage-Fairy-53cfd5d20596482883c2a76f5ce97328",
   initialState: {
     user: null,
     giver: null,
@@ -96,7 +98,7 @@ app.frame("/", async (c) => {
       <Button value="find" action="/find">
         🔍 Find user
       </Button>,
-      <Button.Link href="https://example.com">More info</Button.Link>,
+      <Button.Link href="https://warpcast.notion.site/The-Storage-Fairy-53cfd5d20596482883c2a76f5ce97328">More info</Button.Link>,
     ],
   });
 });
