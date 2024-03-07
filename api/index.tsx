@@ -2,10 +2,12 @@ import { Button, Frog, TextInput } from "frog";
 import { handle } from "frog/vercel";
 import { storageRegistry } from "../lib/contracts.js";
 import neynar from "../lib/neynar.js";
-import { User } from "@neynar/nodejs-sdk/build/neynar-api/v1/openapi/models/user.js";
+import { User as UserV1 } from "@neynar/nodejs-sdk/build/neynar-api/v1/openapi/models/user.js";
+import { User as UserV2 } from "@neynar/nodejs-sdk/build/neynar-api/v2/openapi-farcaster/models/user.js";
 
 type State = {
-  user: User | null;
+  user: UserV1 | null;
+  giver: UserV2 | null;
   txHash: string | null;
   indexed: boolean;
 };
@@ -14,8 +16,9 @@ export const app = new Frog<State>({
   basePath: "/api/frame",
   initialState: {
     user: null,
+    giver: null,
     txHash: null,
-    indexed: false
+    indexed: false,
   },
 });
 
@@ -47,7 +50,7 @@ app.frame("/", async (c) => {
       <div
         style={{
           alignItems: "center",
-          background: "black",
+          background: "white",
           backgroundSize: "100% 100%",
           display: "flex",
           flexDirection: "column",
@@ -61,7 +64,7 @@ app.frame("/", async (c) => {
         <div
           style={{
             display: "flex",
-            color: "white",
+            color: "black",
             fontStyle: "normal",
             letterSpacing: "-0.025em",
           }}
@@ -73,14 +76,16 @@ app.frame("/", async (c) => {
               justifyContent: "center",
             }}
           >
-            <div style={{ fontSize: 80 }}>🎁 Give storage to a friend!</div>
+            <div style={{ fontSize: 80, color: "rgb(67, 44, 141)" }}>
+              🧚 Storage Fairy!
+            </div>
             <div
               style={{ fontSize: 40, display: "flex", flexDirection: "column" }}
             >
+              <div>Give the gift of casts to a friend.</div>
               <div>
-                Enter a username below to give 1 storage unit to a friend.
+                Pay $5 in OP ETH to let them store more casts on Farcaster.
               </div>
-              <div>You'll need about $5 of ETH on Optimism.</div>
             </div>
           </div>
         </div>
@@ -91,15 +96,17 @@ app.frame("/", async (c) => {
       <Button value="find" action="/find">
         🔍 Find user
       </Button>,
+      <Button.Link href="https://example.com">More info</Button.Link>,
     ],
   });
 });
 
 app.frame("/find", async (c) => {
-  const { buttonValue, inputText, previousState, deriveState, transactionId } = c;
+  const { frameData, buttonValue, inputText, previousState, deriveState, transactionId } =
+    c;
 
   let found = false;
-  let user: User;
+  let user: UserV1;
   if (buttonValue === "find" && !transactionId) {
     const username = (inputText ?? "").trim().replace(/^@/, "");
     try {
@@ -109,14 +116,27 @@ app.frame("/find", async (c) => {
     } catch (error) {}
   }
 
+  let giver: UserV2;
+  if (!previousState.giver) {
+    try {
+      const { users } = await neynar.fetchBulkUsers([frameData?.fid ?? 1], { viewerFid: 3 });
+      giver = users[0];
+    } catch (error) {}
+  }
+
   let indexed = false;
   if (previousState.txHash && !previousState.indexed) {
-      const txData = await fetch(
-        `https://api.onceupon.gg/v1/transactions/${previousState.txHash}`
-      );
-      if (txData.status === 200) {
-        indexed = true;
+    const txData = await fetch(
+      `https://api.onceupon.gg/v1/transactions/${previousState.txHash}`
+    );
+    if (txData.status === 200) {
+      indexed = true;
+      if (previousState.user && previousState.giver) {
+      const cast = `@${previousState.user?.username}, @${previousState.giver?.username}`
+      await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, cast);
+
       }
+    }
   }
 
   const state = deriveState((previousState) => {
@@ -128,6 +148,9 @@ app.frame("/find", async (c) => {
     }
     if (indexed) {
       previousState.indexed = true;
+    }
+    if (giver) {
+      previousState.giver = giver;
     }
   });
 
@@ -163,7 +186,7 @@ app.frame("/find", async (c) => {
           <div
             style={{
               alignItems: "center",
-              background: "black",
+              background: "white",
               backgroundSize: "100% 100%",
               display: "flex",
               flexDirection: "column",
@@ -177,7 +200,7 @@ app.frame("/find", async (c) => {
             <div
               style={{
                 display: "flex",
-                color: "white",
+                color: "black",
                 fontSize: 60,
                 fontStyle: "normal",
                 letterSpacing: "-0.025em",
@@ -194,7 +217,9 @@ app.frame("/find", async (c) => {
                   justifyContent: "center",
                 }}
               >
-                <div style={{ fontSize: 60 }}>Broadcasting...</div>
+                <div style={{ fontSize: 60, color: "rgb(67, 44, 141)" }}>
+                  Broadcasting...
+                </div>
                 <div
                   style={{
                     fontSize: 40,
@@ -221,7 +246,7 @@ app.frame("/find", async (c) => {
       <div
         style={{
           alignItems: "center",
-          background: "black",
+          background: "white",
           backgroundSize: "100% 100%",
           display: "flex",
           flexDirection: "column",
@@ -235,7 +260,7 @@ app.frame("/find", async (c) => {
         <div
           style={{
             display: "flex",
-            color: "white",
+            color: "black",
             fontSize: 60,
             fontStyle: "normal",
             letterSpacing: "-0.025em",
@@ -265,9 +290,16 @@ app.frame("/find", async (c) => {
               >
                 <img
                   src={pfp}
-                  style={{ width: 200, height: 200, borderRadius: 100 }}
+                  style={{
+                    width: 200,
+                    height: 200,
+                    borderRadius: 100,
+                    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.5)",
+                  }}
                 />
-                <div>{state.user?.displayName}</div>
+                <div style={{ color: "rgb(67, 44, 141)" }}>
+                  {state.user?.displayName}
+                </div>
               </div>
               <p style={{ marginTop: 0 }}>
                 Give storage to @{state.user?.username}?
