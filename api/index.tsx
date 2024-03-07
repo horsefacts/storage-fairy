@@ -16,6 +16,7 @@ export const app = new Frog<State>({
   basePath: "/api/frame",
   secret: process.env.FROG_SECRET,
   browserLocation: "https://warpcast.notion.site/The-Storage-Fairy-53cfd5d20596482883c2a76f5ce97328",
+  dev: { enabled: false},
   initialState: {
     user: null,
     giver: null,
