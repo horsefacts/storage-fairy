@@ -16,7 +16,7 @@ export const app = new Frog<State>({
   basePath: "/api/frame",
   secret: process.env.FROG_SECRET,
   browserLocation: "https://warpcast.notion.site/The-Storage-Fairy-53cfd5d20596482883c2a76f5ce97328",
-  dev: { enabled: true},
+  dev: { enabled: false},
   initialState: {
     user: null,
     giver: null,
@@ -74,7 +74,7 @@ app.frame("/find", async (c) => {
   let user: UserV1;
   let giver: UserV2;
   if (buttonValue === "find" && !transactionId) {
-    const username = (inputText ?? "").trim().replace(/^@/, "");
+    const username = (inputText ?? "").trim().toLowerCase().replace(/^@/, "");
     try {
       const { result } = await neynar.lookupUserByUsername(username, 3);
       user = result.user;
