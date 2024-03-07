@@ -139,8 +139,8 @@ app.frame("/find", async (c) => {
     if (txData.status === 200) {
       indexed = true;
       if (previousState.user && previousState.giver) {
-        const cast = `@${previousState.user?.username}, @${previousState.giver?.username} gave you 1 storage unit.\nhttps://www.onceupon.gg/${previousState.txHash}`;
-        await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID ?? "", cast);
+        const cast = `@${previousState.user?.username}, @${previousState.giver?.username} gave you 1 storage unit.`;
+        await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID ?? "", cast, { embeds: [{url: `https://www.onceupon.gg/${previousState.txHash}`}]});
       }
     }
   }
