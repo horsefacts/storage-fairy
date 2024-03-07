@@ -111,6 +111,7 @@ app.frame("/find", async (c) => {
     transactionId,
   } = c;
   console.log(c);
+  console.log("txId", transactionId);
 
   let found = false;
   let user: UserV1;
