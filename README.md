@@ -1,4 +1,4 @@
-# 🎁 give-storage
+# 🧚 storage-fairy
 
 A Farcaster frame demonstrating transactions.
 
